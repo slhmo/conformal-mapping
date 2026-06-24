@@ -7,7 +7,7 @@ An asynchronous, mathematical image-warping platform built to apply advanced com
 ## 🚀 Features
 
 * **Interactive Control Dashboard:** A clean, simple workspace built so that users can dynamically chain transformation operators, adjust focal centers, configure math scale domains, and track effects on their images.
-* **Chained Transformation Pipelines:** Compose functions sequentially via function composition ($f \circ g \circ h(z)$) directly from the UI.
+* **Chained Transformation Pipelines:** Compose functions sequentially via function composition (f o g o h(z)) directly from the UI.
 * **Asynchronous Execution Architecture:** Heavy mathematical pixel-mapping loops are offloaded to **Celery workers** backed by a **Redis** message broker, ensuring the web interface remains fluid and non-blocking.
 * **High-Fidelity Inverse Mapping Engine:** Uses a backward grid rendering approach utilizing NumPy vectorized meshranges. Instead of pushing source pixels forward (which creates holes), it maps destination coordinates back to the source image space using **bilinear interpolation**.
 
