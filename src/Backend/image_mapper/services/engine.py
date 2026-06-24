@@ -96,7 +96,7 @@ def mobius(z): return (z - 1) / (z + 1+1e-9)
 def distort(z): return z + 0.1 * np.sin(z)
 def log(z): return np.log(z)
 
-def droste_map(z):
+def three_blue_droste(z):
     scale_factor = 16
     log_scale = np.log(scale_factor)
 
@@ -116,6 +116,7 @@ def chain_transforms(*funcs):
     def wrapper(z):
         for f in funcs:
             z = f(z)
+            # print(f"Applying: {f.__name__}")
         return z
     return wrapper
 
@@ -132,7 +133,33 @@ def cartesian_to_complex(f):
 def stretch_x(x, y):
     return 2 * x, y
 
+def polynomial_x2(x, y):
+    return x**2, y
+
+def polynomial_x3(x, y):
+    return x**3, y
+
+def polynomial_y2(x, y):
+    return x, y**2
+
+def polynomial_y3(x, y):
+    return x, y**3
+
+
 complex_stretch = cartesian_to_complex(stretch_x)
+
+def straight_droste_map(z):
+    """Pure concentric Droste effect without the diagonal spiral twist."""
+    scale_factor = 16
+    log_scale = np.log(scale_factor)
+
+    # Standard log-polar coordinates
+    z_log = np.log(z + 1e-12)
+
+    # Wrap only the scale component, leave the angle intact
+    real_wrapped = (z_log.real % log_scale) - log_scale
+    return np.exp(real_wrapped + 1j * z_log.imag)
+
 
 def transform_image(image_, map_func, math_scale=np.pi, img_size_scale=2, source_zoom=None, center=None, x_bound=None, y_bound=None):
     if x_bound is None:
@@ -158,56 +185,24 @@ def scale_to_bounds(z, factor):
     if max_magnitude == 0:
         return z
 
-    print(z)
     # 2. Scale uniformly to preserve the angles (keeps circles round!)
     # We multiply by np.sqrt(2) so the circle expands to fill the square corners
     scaled_z = (z / max_magnitude) * factor
     return scaled_z
 
 
-def escher_droste_map(R1=0.1, R2=1.0):
-    """
-    True Conformal Droste transform.
-    Maps the annular region between R1 and R2 into an infinite spiral.
-    """
-    # Magnification factor between the outer and inner frame
-    m = R2 / R1
-    ln_m = np.log(m)
+#
+# if __name__=='__main__':
+#     SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+#     IMAGE_PATH = os.path.join(SCRIPT_DIR, "images/3b1b.png")
+#     source = np.array(Image.open(IMAGE_PATH).convert("RGB"))
+#
+#     pipeline = chain_transforms(droste_map)
+#     final_image = transform_image(source, pipeline, math_scale=2*np.pi, img_size_scale=2, center=(407, 274))
+#     image = Image.fromarray(final_image)
+#     image.show()
+#
+#     # steps: 1- log center=(407, 274)    2- source_center=(1075, 1875)
+#
 
-    # The magical Escher scaling factor (complex number alpha)
-    # This dictates the twist angle so the edges match up perfectly
-    alpha = 1 - 1j * (ln_m / (2 * np.pi))
-
-    def wrapper(z):
-        # 1. Map to Log-Polar space
-        # (We add a tiny epsilon to avoid log(0) at the absolute center)
-        z_log = np.log(z + 1e-12)
-
-        # 2. Apply the Escher Twist
-        z_twisted = z_log * alpha
-
-        # 3. Seamless Modulo Wrap
-        # This keeps the coordinates looping infinitely between ln(R1) and ln(R2)
-        ln_R1 = np.log(R1)
-        real_wrapped = ln_R1 + np.mod(z_twisted.real - ln_R1, ln_m)
-        imag_wrapped = z_twisted.imag
-
-        # 4. Project back to Cartesian space
-        return np.exp(real_wrapped + 1j * imag_wrapped)
-
-    return wrapper
-
-
-if __name__=='__main__':
-    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-    IMAGE_PATH = os.path.join(SCRIPT_DIR, "images/3b1b.png")
-    source = np.array(Image.open(IMAGE_PATH).convert("RGB"))
-
-    pipeline = chain_transforms(droste_map)
-    final_image = transform_image(source, pipeline, math_scale=2*np.pi, img_size_scale=2, center=(407, 274))
-    image = Image.fromarray(final_image)
-    image.show()
-
-    # steps: 1- log center=(407, 274)    2- source_center=(1075, 1875)
-
-
+# engine takes

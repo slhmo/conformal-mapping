@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conformal Image Mapper Workspace</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen py-10 px-6 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="border-b border-gray-200 pb-4 mb-8">
+            <h1 class="text-2xl font-semibold tracking-tight text-gray-900">Conformal Mapping Dashboard</h1>
+            <p class="text-sm text-gray-500 mt-1">Configure structural coordinate grids, adjust scaling vectors, and evaluate backward matrix transformations.</p>
+        </header>
+
+        <form id="uploadForm" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <div class="space-y-6 lg:col-span-1 bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">1. Pipeline Functions</h2>
+                    <label class="block text-xs font-medium mb-1 text-gray-600">Add Mapping Operator</label>
+                    <div class="flex gap-2 mb-3">
+                        <select id="operatorSelect" class="flex-1 bg-gray-50 border border-gray-300 rounded text-sm p-2 outline-none focus:border-gray-500">
+                            <option value="THREE BLUE DROSTE">Twisted 3b Droste</option>
+                            <option value="STRAIGHT_DROSTE">Straight Droste (No Twist)</option>
+                            <option value="MOBIUS">Möbius Complex Transformation</option>
+                            <option value="EXP">Complex Exponential (e^z)</option>
+                            <option value="LOG">Complex Logarithm (ln(z))</option>
+                            <option value="DISTORT">Sinusoidal Distortion</option>
+                            <option value="STRETCH_X">Cartesian: Stretch Coordinate X</option>
+                            <option value="POLY_X2">Cartesian: x² Grid Warp</option>
+                            <option value="POLY_X3">Cartesian: x³ Grid Warp</option>
+                            <option value="POLY_Y2">Cartesian: y² Grid Warp</option>
+                            <option value="POLY_Y3">Cartesian: y³ Grid Warp</option>
+                        </select>
+                        <button type="button" id="addOperatorBtn" class="bg-gray-900 text-white hover:bg-gray-800 font-medium px-4 rounded text-xs transition cursor-pointer">
+                            + Add
+                        </button>
+                    </div>
+
+                    <label class="block text-xs font-medium mb-1 text-gray-600">Execution Sequence Order</label>
+                    <div id="pipelineQueue" class="flex flex-wrap gap-2 p-2.5 bg-gray-50 border border-dashed border-gray-300 rounded min-h-[46px] items-center"></div>
+                    <input type="hidden" name="type" id="pipelineInput" value="THREE BLUE DROSTE">
+                </div>
+
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">2. Scale & Geometry Configuration</h2>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-gray-600">Math Scale (Rad)</label>
+                            <input type="number" step="any" name="math_scale" value="3.14159" class="w-full bg-gray-50 border border-gray-300 rounded text-sm p-2 outline-none focus:border-gray-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-gray-600">Img Size Multiplier</label>
+                            <input type="number" name="img_size_scale" value="2" class="w-full bg-gray-50 border border-gray-300 rounded text-sm p-2 outline-none focus:border-gray-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium mb-1 text-gray-600">Source Canvas Zoom factor</label>
+                        <input type="number" step="any" id="sourceZoomInput" name="source_zoom" placeholder="None (Auto-scale)" class="w-full bg-gray-50 border border-gray-300 rounded text-sm p-2 outline-none focus:border-gray-500">
+
+                        <div class="flex items-center mt-2.5">
+                            <input type="checkbox" id="autoZoomSqrt2" name="auto_zoom_sqrt2" class="h-4 w-4 text-gray-900 border-gray-300 rounded accent-gray-900 focus:ring-gray-500 cursor-pointer">
+                            <label for="autoZoomSqrt2" class="ml-2 text-xs font-medium text-gray-600 cursor-pointer select-none">Fit in every source Pixel</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">3. Spatial Focal Centers</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-gray-600">Center Coordinate X</label>
+                            <input type="number" name="center_x" placeholder="w / 2" class="w-full bg-gray-50 border border-gray-300 rounded text-sm p-2 outline-none focus:border-gray-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium mb-1 text-gray-600">Center Coordinate Y</label>
+                            <input type="number" name="center_y" placeholder="h / 2" class="w-full bg-gray-50 border border-gray-300 rounded text-sm p-2 outline-none focus:border-gray-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">4. Custom Domain Grid Bounds</h2>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <input type="number" step="any" name="x_bound_min" placeholder="X Min (-math_scale)" class="w-full bg-gray-50 border border-gray-300 rounded text-xs p-2 outline-none">
+                        <input type="number" step="any" name="x_bound_max" placeholder="X Max (math_scale)" class="w-full bg-gray-50 border border-gray-300 rounded text-xs p-2 outline-none">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" step="any" name="y_bound_min" placeholder="Y Min (-math_scale)" class="w-full bg-gray-50 border border-gray-300 rounded text-xs p-2 outline-none">
+                        <input type="number" step="any" name="y_bound_max" placeholder="Y Max (math_scale)" class="w-full bg-gray-50 border border-gray-300 rounded text-xs p-2 outline-none">
+                    </div>
+                </div>
+
+                <div class="border-t border-gray-100 pt-4">
+                    <label class="block text-xs font-medium mb-1 text-gray-600">Source Matrix Image Asset</label>
+                    <input type="file" name="image" accept="image/*" required class="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:bg-white file:text-gray-700 file:font-medium hover:file:bg-gray-50 cursor-pointer">
+                </div>
+
+                <button type="submit" id="submitBtn" class="w-full bg-gray-950 text-white hover:bg-gray-800 font-medium py-2.5 px-4 rounded text-sm shadow transition duration-150 cursor-pointer">
+                    Compute Mapping
+                </button>
+            </div>
+
+            <div class="lg:col-span-2 flex flex-col justify-center items-center bg-white rounded-lg p-8 border border-gray-200 shadow-sm min-h-[450px] relative">
+                <div id="statusOverlay" class="hidden flex flex-col items-center space-y-2 text-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent"></div>
+                    <div id="statusMessage" class="text-sm font-medium text-gray-700">Evaluating multi-grid transformations...</div>
+                    <div id="taskBadge" class="text-[10px] text-gray-400 font-mono">ID: --</div>
+                </div>
+
+                <div id="placeholderText" class="text-center max-w-sm">
+                    <p class="text-sm text-gray-400">Specify mapping components in the utility panel and run mapping to build outputs here.</p>
+                </div>
+
+                <img id="outputDisplay" class="hidden max-h-[550px] w-auto rounded border border-gray-200 shadow-sm object-contain bg-gray-50" src="" alt="Transformation Engine Output Pipeline">
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const autoZoomSqrt2 = document.getElementById('autoZoomSqrt2');
+        const sourceZoomInput = document.getElementById('sourceZoomInput');
+
+        // Dynamically toggle input viability when the radical(2) checkbox state shifts
+        autoZoomSqrt2.addEventListener('change', () => {
+            if (autoZoomSqrt2.checked) {
+                sourceZoomInput.disabled = true;
+                sourceZoomInput.value = '';
+                sourceZoomInput.classList.add('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+                sourceZoomInput.placeholder = "Locked to standard √2 matrix scale bounds";
+            } else {
+                sourceZoomInput.disabled = false;
+                sourceZoomInput.classList.remove('bg-gray-100', 'text-gray-400', 'cursor-not-allowed');
+                sourceZoomInput.placeholder = "None (Auto-scale)";
+            }
+        });
+
+        // Pipeline track arrays
+        const operatorSelect = document.getElementById('operatorSelect');
+        const addOperatorBtn = document.getElementById('addOperatorBtn');
+        const pipelineQueue = document.getElementById('pipelineQueue');
+        const pipelineInput = document.getElementById('pipelineInput');
+
+        let pipelineSteps = [];
+
+        function renderPipelineElements() {
+            pipelineQueue.innerHTML = '';
+            if (pipelineSteps.length === 0) {
+                pipelineQueue.innerHTML = '<span class="text-xs text-gray-400 italic">Pipeline is empty. Defaulting to 3b Droste.</span>';
+                pipelineInput.value = '';
+                return;
+            }
+
+            pipelineSteps.forEach((step, index) => {
+                const badge = document.createElement('div');
+                badge.className = 'flex items-center bg-gray-100 text-gray-800 text-xs font-mono px-2 py-1 rounded border border-gray-300 shadow-xs';
+                badge.innerHTML = `
+                    <span class="mr-1.5 font-bold text-gray-500">${index + 1}.</span>
+                    <span class="font-medium">${step}</span>
+                    <button type="button" class="ml-2 text-gray-400 hover:text-red-500 font-bold focus:outline-none transition cursor-pointer" onclick="removePipelineStep(${index})">&times;</button>
+                `;
+                pipelineQueue.appendChild(badge);
+            });
+
+            pipelineInput.value = pipelineSteps.join(',');
+        }
+
+        addOperatorBtn.addEventListener('click', () => {
+            pipelineSteps.push(operatorSelect.value);
+            renderPipelineElements();
+        });
+
+        window.removePipelineStep = function(index) {
+            pipelineSteps.splice(index, 1);
+            renderPipelineElements();
+        };
+
+        renderPipelineElements();
+
+        const form = document.getElementById('uploadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusOverlay = document.getElementById('statusOverlay');
+        const statusMessage = document.getElementById('statusMessage');
+        const taskBadge = document.getElementById('taskBadge');
+        const placeholderText = document.getElementById('placeholderText');
+        const outputDisplay = document.getElementById('outputDisplay');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            submitBtn.disabled = true;
+            placeholderText.classList.add('hidden');
+            outputDisplay.classList.add('hidden');
+            statusOverlay.classList.remove('hidden');
+            statusMessage.innerText = "Transmitting image matrix payloads to storage...";
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('/api/transform/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Server rejected creation sequence.');
+
+                taskBadge.innerText = `TASK IDENTIFIER: ${data.task_id}`;
+                statusMessage.innerText = "Task accepted. Running background matrix evaluation loops...";
+
+                pollTaskStatus(data.task_id);
+
+            } catch (err) {
+                alert(`Pipeline initialization error: ${err.message}`);
+                resetUI();
+            }
+        });
+
+        function pollTaskStatus(taskId) {
+            const intervalId = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/status/${taskId}/`);
+                    const data = await res.json();
+
+                    if (!res.ok) throw new Error(data.error || 'Failed status validation check.');
+
+                    if (data.status === 'PROCESSING') {
+                        statusMessage.innerText = "Executing backward grid bilinear interpolation maps...";
+                    }
+                    else if (data.status === 'COMPLETED') {
+                        clearInterval(intervalId);
+                        outputDisplay.src = data.result_url;
+                        outputDisplay.classList.remove('hidden');
+                        statusOverlay.classList.add('hidden');
+                        submitBtn.disabled = false;
+                    }
+                    else if (data.status === 'FAILED') {
+                        clearInterval(intervalId);
+                        alert(`Transformation loop exception: ${data.error_message}`);
+                        resetUI();
+                    }
+                } catch (err) {
+                    clearInterval(intervalId);
+                    alert(`Worker polling connection exception: ${err.message}`);
+                    resetUI();
+                }
+            }, 1200);
+        }
+
+        function resetUI() {
+            submitBtn.disabled = false;
+            statusOverlay.classList.add('hidden');
+            placeholderText.classList.remove('hidden');
+            outputDisplay.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
