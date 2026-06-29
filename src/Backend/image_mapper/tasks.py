@@ -46,6 +46,23 @@ def process_conformal_mapping(task_id):
             'POLY_Y3': cartesian_to_complex(polynomial_y3),
         }
 
+        requested_steps = [step.strip() for step in
+                           task.transform_type.split(',') if step.strip()]
+
+        if 'CUSTOM' in requested_steps and task.custom_expression:
+            from .services.engine import make_multiline_custom_function
+            try:
+                # Generate function object on the fly!
+                custom_func = make_multiline_custom_function(task.custom_expression)
+                TRANSFORM_FUNCTIONS['CUSTOM'] = custom_func
+            except Exception as compile_err:
+                raise ValueError(f"Custom Code Compilation Error: {str(compile_err)}")
+
+        # Your existing code works perfectly with no changes below this line:
+        funcs = [TRANSFORM_FUNCTIONS[name] for name in requested_steps if
+                 name in TRANSFORM_FUNCTIONS]
+
+
         # parse string sequence into sequential engine function handles
         requested_steps = [step.strip() for step in task.transform_type.split(',') if step.strip()]
         funcs = [TRANSFORM_FUNCTIONS[name] for name in requested_steps if name in TRANSFORM_FUNCTIONS]

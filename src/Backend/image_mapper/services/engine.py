@@ -160,7 +160,6 @@ def straight_droste_map(z):
     real_wrapped = (z_log.real % log_scale) - log_scale
     return np.exp(real_wrapped + 1j * z_log.imag)
 
-
 def transform_image(image_, map_func, math_scale=np.pi, img_size_scale=2, source_zoom=None, center=None, x_bound=None, y_bound=None):
     if x_bound is None:
         x_bound = (-math_scale, math_scale)
@@ -190,6 +189,27 @@ def scale_to_bounds(z, factor):
     scaled_z = (z / max_magnitude) * factor
     return scaled_z
 
+
+def make_multiline_custom_function(code_string):
+    """
+    Accepts an entire Python code block as a string, executes its definition,
+    and extracts the callable function handle. Automatically handles function body indentation.
+    """
+    # Provide numpy and math standard modules inside the local execution box
+    execution_scope = {'np': np, 'math': math}
+
+    # Automatically prepend 4 spaces to each line to form a proper function body
+    indented_code = "\n".join(
+        f"    {line}" for line in code_string.splitlines() if line.strip())
+    if not indented_code:
+        indented_code = "    pass"
+
+    full_wrapper_code = f"def user_compiled_func(z):\n{indented_code}\n    return z"
+
+    # Execute string compilation into our scope dictionary box
+    exec(full_wrapper_code, execution_scope)
+
+    return execution_scope['user_compiled_func']
 
 #
 # if __name__=='__main__':

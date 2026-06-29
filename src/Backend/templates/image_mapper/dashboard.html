@@ -23,6 +23,7 @@
                     <label class="block text-xs font-medium mb-1 text-gray-600">Add Mapping Operator</label>
                     <div class="flex gap-2 mb-3">
                         <select id="operatorSelect" class="flex-1 bg-gray-50 border border-gray-300 rounded text-sm p-2 outline-none focus:border-gray-500">
+                            <option value="CUSTOM">*Write Your Custom Function*</option>
                             <option value="THREE BLUE DROSTE">Twisted 3b Droste</option>
                             <option value="STRAIGHT_DROSTE">Straight Droste (No Twist)</option>
                             <option value="MOBIUS">Möbius Complex Transformation</option>
@@ -35,7 +36,8 @@
                             <option value="POLY_Y2">Cartesian: y² Grid Warp</option>
                             <option value="POLY_Y3">Cartesian: y³ Grid Warp</option>
                         </select>
-                        <button type="button" id="addOperatorBtn" class="bg-gray-900 text-white hover:bg-gray-800 font-medium px-4 rounded text-xs transition cursor-pointer">
+                        <textarea name="custom_expression" id="customExpressionInput" class="hidden"></textarea>
+                        <button type="button" id="addOperatorBtn" class="bg-gray-900 text-white hover:bg-gray-800 font-medium px-4 rounded text-xs transition duration-150 cursor-pointer">
                             + Add
                         </button>
                     </div>
@@ -121,6 +123,39 @@
         </form>
     </div>
 
+    <div id="customModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg border border-gray-200 shadow-xl max-w-2xl w-full flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-gray-950 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xs font-bold uppercase tracking-wider">Custom Complex Map Workspace</h3>
+                <button type="button" id="closeModalBtn" class="text-gray-400 hover:text-white text-xl font-bold focus:outline-none cursor-pointer">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-gray-500 leading-relaxed">
+                    Write multi-line Python expressions manipulating your continuous complex destination array element layer <code class="bg-gray-100 text-gray-900 px-1 rounded font-mono">z</code>.
+                    Modules <code class="bg-gray-100 text-gray-900 px-1 rounded font-mono">np</code> (NumPy) and <code class="bg-gray-100 text-gray-900 px-1 rounded font-mono">math</code> are pre-configured.
+                    Your block will compile within an execution block wrapper that implicitly preserves and processes the matrix output coordinates.
+                </p>
+                <div class="border border-gray-200 rounded-md overflow-hidden shadow-xs">
+                    <div class="bg-gray-50 px-4 py-1.5 border-b border-gray-200 text-[11px] font-mono text-gray-400 select-none">
+                        def user_compiled_func(z):
+                    </div>
+                    <textarea id="modalTextArea" rows="8" class="w-full bg-gray-900 text-emerald-400 font-mono text-xs p-4 outline-none focus:ring-0 block" placeholder="# Example: Apply custom mathematical mappings or distortions&#10;magnitude = np.abs(z)&#10;phase = np.angle(z)&#10;z = np.exp(magnitude) * np.exp(1j * phase * 2.0)"></textarea>
+                    <div class="bg-gray-50 px-4 py-1.5 border-t border-gray-200 text-[11px] font-mono text-gray-400 text-right select-none">
+                        return z
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 flex justify-end gap-2.5">
+                <button type="button" id="cancelModalBtn" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium text-xs py-2 px-4 rounded transition cursor-pointer">
+                    Discard
+                </button>
+                <button type="button" id="saveModalBtn" class="bg-gray-950 text-white hover:bg-gray-800 font-medium text-xs py-2 px-4 rounded transition cursor-pointer">
+                    Save & Link Pipeline
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const autoZoomSqrt2 = document.getElementById('autoZoomSqrt2');
         const sourceZoomInput = document.getElementById('sourceZoomInput');
@@ -144,6 +179,14 @@
         const addOperatorBtn = document.getElementById('addOperatorBtn');
         const pipelineQueue = document.getElementById('pipelineQueue');
         const pipelineInput = document.getElementById('pipelineInput');
+        const customExpressionInput = document.getElementById('customExpressionInput');
+
+        // Modal Specific Workspace Elements
+        const customModal = document.getElementById('customModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelModalBtn = document.getElementById('cancelModalBtn');
+        const saveModalBtn = document.getElementById('saveModalBtn');
+        const modalTextArea = document.getElementById('modalTextArea');
 
         let pipelineSteps = [];
 
@@ -169,13 +212,48 @@
             pipelineInput.value = pipelineSteps.join(',');
         }
 
+        // Intercept Custom Options to trigger Modal Workspace
         addOperatorBtn.addEventListener('click', () => {
-            pipelineSteps.push(operatorSelect.value);
+            if (operatorSelect.value === 'CUSTOM') {
+                customModal.classList.remove('hidden');
+            } else {
+                pipelineSteps.push(operatorSelect.value);
+                renderPipelineElements();
+            }
+        });
+
+        // Close and discard layout toggles
+        function hideCustomModal() {
+            customModal.classList.add('hidden');
+        }
+
+        closeModalBtn.addEventListener('click', hideCustomModal);
+        cancelModalBtn.addEventListener('click', hideCustomModal);
+
+        // Save logic compilation configuration context
+        saveModalBtn.addEventListener('click', () => {
+            const userExpression = modalTextArea.value.trim();
+            if (!userExpression) {
+                alert("Please write valid logic mapping changes onto vector parameter 'z' before compiling.");
+                return;
+            }
+
+            // Sync structural parameters to the hidden form channel
+            customExpressionInput.value = userExpression;
+
+            // Push execution identifier steps sequentially
+            pipelineSteps.push('CUSTOM');
             renderPipelineElements();
+            hideCustomModal();
         });
 
         window.removePipelineStep = function(index) {
-            pipelineSteps.splice(index, 1);
+            const removedStep = pipelineSteps.splice(index, 1)[0];
+            // Purge string caches safely if the workspace module is detached
+            if (removedStep === 'CUSTOM') {
+                customExpressionInput.value = '';
+                modalTextArea.value = '';
+            }
             renderPipelineElements();
         };
 

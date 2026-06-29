@@ -18,6 +18,12 @@ class ConformalTask(models.Model):
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='PENDING')
     error_message = models.TextField(blank=True, null=True)
 
+    custom_expression = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Custom Python/NumPy math expression using the variable 'z'"
+    )
+
     # pipeline functions
     transform_type = models.CharField(
         max_length=255,
