@@ -7,9 +7,18 @@ An asynchronous, mathematical image-warping platform built to apply advanced com
 ## 🚀 Features
 
 * **Interactive Control Dashboard:** A clean, simple workspace built so that users can dynamically chain transformation operators, adjust focal centers, configure math scale domains, and track effects on their images.
-* **Chained Transformation Pipelines:** Compose functions sequentially via function composition (f o g o h(z)) directly from the UI.
+* **Chained Transformation Pipelines:** Compose functions sequentially via function composition ($f \circ g \circ h(z)$) directly from the UI.
+* **Dynamic Custom Expression Sandbox:** Write multi-line Python and NumPy code blocks on the fly inside an interactive modal workspace. The engine dynamically compiles and integrates your custom mathematical mappings into the execution pipeline.
 * **Asynchronous Execution Architecture:** Heavy mathematical pixel-mapping loops are offloaded to **Celery workers** backed by a **Redis** message broker, ensuring the web interface remains fluid and non-blocking.
 * **High-Fidelity Inverse Mapping Engine:** Uses a backward grid rendering approach utilizing NumPy vectorized meshranges. Instead of pushing source pixels forward (which creates holes), it maps destination coordinates back to the source image space using **bilinear interpolation**.
+
+---
+
+## 🎬 Showcase
+
+![Transformation Showcase](images/engine_showcase_optimized.gif)
+
+*A preview of the transformation pipeline executing chained complex transformations and coordinate distortions.*
 
 ---
 
@@ -34,7 +43,6 @@ Adapts pure spatial transformations $(x, y) \mapsto (x', y')$ back into the comp
 * **Coordinate Stretching:** Axis-specific matrix multiplier adjustments.
 
 * **Since we are using reverse mapping to map any pixel of target image to their corresponding source pixel, We need to apply reversed functions. It's not handled in the code so, e.g. you want to apply $f(z) = e^z$ use $f(z) = \ln(z).$**
-* **You can use the engine itself to apply your custom transformation functions.**
 
 ---
 
